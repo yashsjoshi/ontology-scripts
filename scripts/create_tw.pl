@@ -383,7 +383,7 @@ sub addVariables {
             }
             elsif ( $header eq "Variable label" && $value eq "" ) {
                 if ( defined($row->{'Trait name'}) && defined($row->{'Scale name'}) ) {
-                    $value = $row->{'Trait name'} . " " . $row->{'Scale name'};
+                    $value = $row->{'Trait name'} . " - " . $row->{'Scale name'};
                 }
             }
             elsif ( $header eq "VARIABLE KEY" ) {
@@ -402,7 +402,7 @@ sub addVariables {
     $c = 0;
     for (@TW_VARIABLE_HEADERS) {
         my $header = $_;
-        if ( $header eq "Variable ID" || $header eq "Variable name" || $header eq "Variable synonyms" || $header eq "VARIABLE KEY" ) {
+        if ( $header eq "Variable ID" || $header eq "Variable name" || $header eq "Variable label" || $header eq "Variable synonyms" || $header eq "VARIABLE KEY" ) {
             $ws->conditional_formatting(1, $c, 9999, $c, {
                 type => 'duplicate',
                 format => $error_format
