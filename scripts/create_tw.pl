@@ -99,6 +99,8 @@ my $TW_SCALE_CATEGORY_COUNT = 10;
 my @TW_TRAIT_CLASS_HEADERS = ("Trait class ID", "Trait class name");
 my @TW_ROOT_HEADERS = ("Root ID", "Root name", "namespace");
 
+# Max number of rows for conditional formatting
+my $CF_MAX_ROW = 9999;
 
 
 
@@ -404,27 +406,27 @@ sub addVariables {
     for (@TW_VARIABLE_HEADERS) {
         my $header = $_;
         if ( $header eq "Variable ID" || $header eq "Variable name" || $header eq "Variable label" || $header eq "Variable synonyms" || $header eq "VARIABLE KEY" ) {
-            $ws->conditional_formatting(1, $c, 9999, $c, {
+            $ws->conditional_formatting(1, $c, $CF_MAX_ROW, $c, {
                 type => 'duplicate',
                 format => $error_format
             });
         }
         elsif ( $header eq "Trait name" ) {
-            $ws->conditional_formatting(1, $c, 9999, $c, {
+            $ws->conditional_formatting(1, $c, $CF_MAX_ROW, $c, {
                 type => 'formula',
                 criteria => '=AND(NOT(ISBLANK(O2)), ISERROR(MATCH(O2,Traits!B:B,0)))',
                 format => $error_format
             });
         }
         elsif ( $header eq "Method name" ) {
-            $ws->conditional_formatting(1, $c, 9999, $c, {
+            $ws->conditional_formatting(1, $c, $CF_MAX_ROW, $c, {
                 type => 'formula',
                 criteria => '=AND(NOT(ISBLANK(P2)), ISERROR(MATCH(P2,Methods!B:B,0)))',
                 format => $error_format
             });
         }
         elsif ( $header eq "Scale name" ) {
-            $ws->conditional_formatting(1, $c, 9999, $c, {
+            $ws->conditional_formatting(1, $c, $CF_MAX_ROW, $c, {
                 type => 'formula',
                 criteria => '=AND(NOT(ISBLANK(Q2)), ISERROR(MATCH(Q2,Scales!B:B,0)))',
                 format => $error_format
@@ -503,8 +505,15 @@ sub addTraits {
     for (@TW_TRAIT_HEADERS) {
         my $header = $_;
         if ( $header eq "Trait ID" || $header eq "Trait name" ) {
-            $ws->conditional_formatting(1, $c, 9999, $c, {
+            $ws->conditional_formatting(1, $c, $CF_MAX_ROW, $c, {
                 type => 'duplicate',
+                format => $error_format
+            });
+        }
+        elsif ( $header eq "Trait class" ) {
+            $ws->conditional_formatting(1, $c, $CF_MAX_ROW, $c, {
+                type => 'formula',
+                criteria => "=AND(NOT(ISBLANK(C2)), ISERROR(MATCH(C2,'Trait Classes'!B:B,0)))",
                 format => $error_format
             });
         }
@@ -581,7 +590,7 @@ sub addMethods {
     for (@TW_METHOD_HEADERS) {
         my $header = $_;
         if ( $header eq "Method ID" || $header eq "Method name" ) {
-            $ws->conditional_formatting(1, $c, 9999, $c, {
+            $ws->conditional_formatting(1, $c, $CF_MAX_ROW, $c, {
                 type => 'duplicate',
                 format => $error_format
             });
@@ -688,7 +697,7 @@ sub addScales {
     for (@TW_SCALE_HEADERS) {
         my $header = $_;
         if ( $header eq "Scale ID" || $header eq "Scale name" ) {
-            $ws->conditional_formatting(1, $c, 9999, $c, {
+            $ws->conditional_formatting(1, $c, $CF_MAX_ROW, $c, {
                 type => 'duplicate',
                 format => $error_format
             });
