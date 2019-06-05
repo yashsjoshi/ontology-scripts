@@ -77,6 +77,7 @@ use Getopt::Std;
 use File::Fetch;
 use Excel::Writer::XLSX;
 use Excel::Writer::XLSX::Utility;
+use Scalar::Util qw(looks_like_number);
 use Data::Dumper;
 
 
@@ -662,13 +663,22 @@ sub addScales {
                 $c++;
             }
 
-            # Add Scale Categories
+            # Parse Scale Categories
+            my %parsed_scales;
             for (keys %$row) {
                 my $key = $_;
                 if ( rindex($key, "Category") == 0 ) {
-                    $ws->write($r, $c, $row->{$key});
-                    $c++;
+                    my @cat_parts = split(/=/, $row->{$key});
+                    my $cat_key = trimws($cat_parts[0]);
+                    my $cat_value = trimws($cat_parts[1]);
+                    $parsed_scales{$cat_key} = $cat_value;
                 }
+            }
+
+            # Add Scale Categories, sorted by key
+            foreach my $key (sort sortKeys (keys(%parsed_scales))) {
+                $ws->write($r, $c, $key . "= " . $parsed_scales{$key});
+                $c++;
             }
         }
     }
@@ -782,6 +792,38 @@ sub addRoot {
 ## UTILITY FUNCTIONS
 #######################################
 
+
+######
+## sortKeys()
+##
+## Array Sort Function:
+## Sort numerically, if both values are a number
+## Otherwise, sort alphabetically
+######
+sub sortKeys {
+    return looks_like_number($a) && looks_like_number($b) ? $a <=> $b : $a cmp $b;
+}
+
+
+######
+## trimws()
+##
+## Remove leading and trailing whitespace
+##
+## Arguments:
+##      $string
+##
+## Returns: trimmed string
+######
+sub trimws {
+    if ( defined($_[0]) ) {
+        (my $s = $_[0]) =~ s/^\s+|\s+$//g;
+        return $s;
+    }
+    else {
+        return "";
+    }
+}
 
 
 ######
