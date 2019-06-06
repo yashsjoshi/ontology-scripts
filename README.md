@@ -33,7 +33,7 @@ Each data type (Variable, Trait, Method, Scale) is represented by a
 Scripts
 -----
 
-**create_tw.pl**
+**create_tw.pl** - Create a Trait Workbook from an existing Trait Dictionary
 
 ```
 NAME
@@ -83,7 +83,7 @@ AUTHOR
     David Waring <djw64@cornell.edu>
 ```
 
-**build_traits.pl**
+**build_traits.pl** - Build a Trait Dictionary and/or Standard-OBO file from a Trait Workbook
 
 ```
 NAME
@@ -122,7 +122,7 @@ AUTHOR
     David Waring <djw64@cornell.edu>
 ```
 
-**convert_obo.pl**
+**convert_obo.pl** - Convert a Standard-OBO file to an SGN-OBO file
 
 ```
 NAME
@@ -172,3 +172,10 @@ DESCRIPTION
 AUTHOR
     David Waring <djw64@cornell.edu>
 ```
+
+### Perl Dependencies
+
+- Excel::Writer::XLSX
+- Excel::Writer::XLSX::Utility
+- Spreadsheet::Read
+- DateTime::Format::Excel
