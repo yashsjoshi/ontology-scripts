@@ -63,13 +63,6 @@ David Waring <djw64@cornell.edu>
 =cut
 
 
-######
-## TODO:
-##      - Sort scale categories by category key
-##      - Fix Variable Date formats
-######
-
-
 
 use strict;
 use warnings;
@@ -77,6 +70,7 @@ use Getopt::Std;
 use File::Fetch;
 use Excel::Writer::XLSX;
 use Excel::Writer::XLSX::Utility;
+use DateTime::Format::Excel;
 use Scalar::Util qw(looks_like_number);
 use Data::Dumper;
 
@@ -388,6 +382,9 @@ sub addVariables {
                 if ( defined($row->{'Trait name'}) && defined($row->{'Scale name'}) ) {
                     $value = $row->{'Trait name'} . " - " . $row->{'Scale name'};
                 }
+            }
+            elsif ( $header eq "Date" ) {
+                $value = formatDate($value);
             }
             elsif ( $header eq "VARIABLE KEY" ) {
                 my $tn_cell = xl_rowcol_to_cell($r, $c-3);
@@ -832,6 +829,26 @@ sub trimws {
     else {
         return "";
     }
+}
+
+
+######
+## formatDate()
+##
+## Convert an Excel date number to YYYY-MM-dd format
+##
+## Arguments:
+##      $date
+##
+## Returns: formatted date
+######
+sub formatDate {
+    my $date = shift;
+    if ( looks_like_number($date) ) {
+        my $dt = DateTime::Format::Excel->parse_datetime($date);
+        $date = $dt->ymd();
+    }
+    return $date;
 }
 
 
