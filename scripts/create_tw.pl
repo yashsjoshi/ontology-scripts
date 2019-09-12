@@ -375,8 +375,7 @@ sub addVariables {
 
             # Parse some column values
             if ( $header eq "Variable ID" ) {
-                $value = (split /:/, $value)[1];
-                $value =~ s/^0*//g;
+                $value = reduceID($value);
             }
             elsif ( $header eq "Variable label" && $value eq "" ) {
                 if ( defined($row->{'Trait name'}) && defined($row->{'Scale name'}) ) {
@@ -487,8 +486,7 @@ sub addTraits {
 
                 # Parse some column values
                 if ( $header eq "Trait ID" ) {
-                    $value = (split /:/, $value)[1];
-                    $value =~ s/^0*//g;
+                    $value = reduceID($value);
                 }
 
                 $ws->write($r, $c, $value);            
@@ -572,8 +570,7 @@ sub addMethods {
 
                 # Parse some column values
                 if ( $header eq "Method ID" ) {
-                    $value = (split /:/, $value)[1];
-                    $value =~ s/^0*//g;
+                    $value = reduceID($value);
                 }
 
                 $ws->write($r, $c, $value);            
@@ -659,10 +656,7 @@ sub addScales {
 
                 # Parse some column values
                 if ( $header eq "Scale ID" ) {
-                    if ( index($value, ":") != -1 ) {
-                        $value = (split /:/, $value)[1];
-                    }
-                    $value =~ s/^0*//g;
+                    $value = reduceID($value);
                 }
 
                 $ws->write($r, $c, $value);            
@@ -797,6 +791,32 @@ sub addRoot {
 #######################################
 ## UTILITY FUNCTIONS
 #######################################
+
+
+######
+## reduceID()
+##
+## Reduce Variable ID:
+## Convert CO_xxx:000000n to a simple integer of n
+##
+## Arguments:
+##      $id
+##
+## Returns: reduced ID
+######
+sub reduceID {
+    my $value = $_[0];
+    if ( index($value, ":") != -1 ) {
+        $value = (split /:/, $value)[1];
+    }
+    if ( $value =~ /0+[1-9]+/ ) {
+        $value =~ s/^0*//g;
+    }
+    elsif ( $value =~ /^0+$/ ) {
+        $value = 0;
+    }
+    return $value;
+}
 
 
 ######
