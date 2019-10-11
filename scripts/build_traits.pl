@@ -58,7 +58,9 @@ David Waring <djw64@cornell.edu>
 
 ######
 ## TODO:
-##      - filter output files by institution
+##      - check ids across worksheets for duplicates
+##      - check names across worksheets for duplicates 
+##          (Variable name, Variable label, Trait name, Method name, Scale name)
 ######
 
 
@@ -121,7 +123,7 @@ my @OBO_TERM_TAGS = ("id","is_anonymous","name","namespace","alt_id","def","comm
 
 # Get command line flags/options
 my %opts=();
-getopts("o:t:u:fv", \%opts);
+getopts("i:o:t:u:fv", \%opts);
 
 my $verbose = $opts{v};
 my $obo_output = $opts{o};
@@ -152,6 +154,9 @@ if ( defined($obo_output) ) {
 # Print Input Info
 message("Command Inputs:");
 message("   Trait Workbook File: $wb_file");
+if ( defined($filter_institution) ) {
+    message("   Filter Traits By Institution: $filter_institution");
+}
 if ( $obo_output ) { 
     message("   OBO Output File: $obo_output");
     message("   Username: $obo_user");
@@ -227,17 +232,26 @@ sub readTraits {
     # Read the workbook from the specified file
     my $book = Spreadsheet::Read->new($file);
 
-    # Parse all of the Sheets
+    # Hash to hold each of the sheets
     my %sheets;
-    for ( @TW_SHEETS ) {
-        my $name = $_;
-        $sheets{$name} = parseSheet($book, $name);
 
-        # Check individual sheets for errors / missing data
-        if ( !$ignore_checks ) {
-            checkSheet($sheets{$name}, $name);
-        }
-    }
+    # Read Variables
+    $sheets{'Variables'} = parseSheet($book, 'Variables');
+
+    # Read Traits
+    $sheets{'Traits'} = parseSheet($book, 'Traits', $sheets{'Variables'}, 'Trait name');
+
+    # Read Methods
+    $sheets{'Methods'} = parseSheet($book, 'Methods', $sheets{'Variables'}, 'Method name');
+
+    # Read Scales
+    $sheets{'Scales'} = parseSheet($book, 'Scales', $sheets{'Variables'}, 'Scale name');
+
+    # Read Trait Classes
+    $sheets{'Trait Classes'} = parseSheet($book, 'Trait Classes');
+
+    # Read Root
+    $sheets{'Root'} = parseSheet($book, 'Root');
     
     # Return the parsed sheets
     return \%sheets;
@@ -251,16 +265,35 @@ sub readTraits {
 ## array item represents a row with the key set to the header 
 ## name and the value set to the cell value.
 ##
+## If $variables and $column are given as arguments, rows will 
+## only be added if a value from the specified column name is 
+## found in the column with the same name from the variables rows
+##
 ## Arguments:
 ##      $book: Spreadsheet::Read workbook
 ##      $sheetName: name of worksheet to parse
+##      $variables: an array ref to the variables rows, optional
+##      $column: a column to match values from the variables, optional
 ##
 ## Returns: a reference to an array of parsed worksheet rows
 ######
 sub parseSheet {
     my $book = shift;
     my $sheetName = shift;
+    my $variables = shift;
+    my $column = shift;
     message("   Parsing worksheet [$sheetName]");
+
+    # Get filter values
+    my $filter = 0;
+    my %filter_values;
+    if ( $variables && $column ) {
+        $filter = 1;
+        foreach my $row ( @{$variables} ) {
+            my $v = $row->{$column};
+            $filter_values{$v} = 1;
+        }
+    }
 
     # Get the worksheet
     my $sheet = $book->sheet($sheetName);
@@ -275,11 +308,33 @@ sub parseSheet {
     for ( my $i = 2; $i <= $sheet->maxrow; $i++ ) {
         my @row = $sheet->row($i);
         my %row_items;
+        my $include = 1;
         
         # Get the value of each row item (column)
         while ( my ($index, $value) = each(@row) ) {
             my $key = $header[$index];
             $row_items{$key} = $value;
+
+            # Filter Variables by Institution, if requested
+            if ( defined($filter_institution) ) {
+                if ( $sheetName eq "Variables" && $key eq "Institution" ) {
+                    $include = 0;
+                    for (split(/\s*\,\s*/, $value)) {
+                        if ( $_ eq $filter_institution ) {
+                            $include = 1;
+                        }
+                    }
+                }
+            }
+
+            # Filter other sheets by column from variables table
+            if ( $filter ) {
+                if ( $key eq $column ) {
+                    if ( !exists($filter_values{$value}) ) {
+                        $include = 0;
+                    }
+                }
+            }
             
             # Update max category count
             if ( index($key, "Category") != -1 ) {
@@ -292,7 +347,9 @@ sub parseSheet {
         }
 
         # Add row items to list of parsed rows
-        push(@rows, \%row_items);
+        if ( $include == 1 ) {
+            push(@rows, \%row_items);
+        }
     }
 
 

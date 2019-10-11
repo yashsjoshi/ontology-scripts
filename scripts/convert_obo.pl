@@ -60,6 +60,12 @@ David Waring <djw64@cornell.edu>
 =cut
 
 
+######
+## TODO:
+##      - Add scale definition (particulary for categorical scales) to variable definition
+######
+
+
 use strict;
 use warnings;
 use Getopt::Long;
