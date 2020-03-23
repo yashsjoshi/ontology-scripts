@@ -1110,13 +1110,15 @@ sub OBOAddScales {
             if ( defined($scale_cat_value) ) {
                 push(@scale_cat_defs, $scale_cat_value);
                 my @scale_cat_value_parts = split(/=/, $scale_cat_value, 2);
+                my $scale_cat_syn = trimws($scale_cat_value_parts[0]);
+                my $scale_cat_name = trimws($scale_cat_value_parts[1]);
 
                 # Add Scale Category Term
                 my %scale_cat_items = (
                     id => $scale_id . "/" . $scale_cat_count,
-                    name => trimws($scale_cat_value_parts[1]),
+                    name => $scale_cat_name ? $scale_cat_name : $scale_cat_syn,
                     namespace => $namespace,
-                    synonym => "\"" . trimws($scale_cat_value_parts[0]) . "\" EXACT []",
+                    synonym => "\"" . $scale_cat_syn . "\" EXACT []",
                     is_a => $scale_id
                 );
                 push(@scale_cat_items, \%scale_cat_items);
