@@ -144,6 +144,12 @@ $contents = updateHeader($contents);
 # Convert the namespaces
 $contents = convertNamespaces($default_namespace, $namespaces, $contents);
 
+# Replace `name: 0`
+$contents = replaceNameZero($contents);
+
+# Remove DBXrefs
+$contents = removeDBXrefs($contents);
+
 # Write File
 writeFile($output, $contents);
 
@@ -247,6 +253,42 @@ sub convertNamespaces {
         $contents =~ s/\nnamespace:[ ]*$ns\n/\nnamespace: $keep\n/g;
     }
 
+    return $contents;
+}
+
+
+######
+## replaceNameZero()
+##
+## Replace `name: 0` with `name: null` in all Term blocks since  
+## this throws an error in the Chado gmoad_load_cvterms.pl script
+## 
+## Arguments:
+##      $contents: file contents to be updated
+##
+## Returns: updated file contents
+######
+sub replaceNameZero {
+    my $contents = shift;
+    $contents =~ s/^name: 0$/name: null/gm;
+    return $contents;
+}
+
+
+#######
+## removeDBXrefs()
+##
+## Remove DBX refs from the def line since SGN requires
+## a specific format that may not be followed
+##
+## Arguments
+##      $contents: file contents to be updated
+##
+## Returns: updated file contents
+######
+sub removeDBXrefs {
+    my $contents = shift;
+    $contents =~ s/^def: (.*) \[.*\]$/def: $1 \[\]/gm;
     return $contents;
 }
 
