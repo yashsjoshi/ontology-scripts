@@ -6,7 +6,7 @@ build_traits.pl
 
 =head1 SYNOPSIS
 
-Usage: perl build_traits.pl [-o output -u username] [-t output] [-i institution] [-fv] file 
+Usage: perl build_traits.pl [-o output -u username] [-t output] [-i institution] [-c category count] [-fv] file 
 
 Options/Arguments:
 
@@ -28,6 +28,10 @@ specify the output location for the trait dictionary file
 =item -i
 
 filter the output to contain only the variables used by the specified institution
+
+=item -c
+
+specify the number of scale categories that are defined in the trait workbook (default=10)
 
 =item -f
 
@@ -73,7 +77,7 @@ use Data::Dumper;
 
 # PROGRAM INFORMATION
 my $PROGRAM_NAME = "build_traits.pl";
-my $PROGRAM_VERSION = "1.0";
+my $PROGRAM_VERSION = "1.1";
 
 
 # Set Trait Workbook Sheet Names
@@ -104,7 +108,7 @@ my @TD_METHOD_HEADERS = ("Method ID","Method name","Method class","Method descri
     "Formula","Method reference");
 my @TD_SCALE_HEADERS = ("Scale ID","Scale name","Scale class","Decimal places","Lower limit",
     "Upper limit","Scale Xref");
-my $TD_SCALE_CATEGORY_COUNT = 10;
+my $DEFAULT_TD_SCALE_CATEGORY_COUNT = 10;
 
 # Crop Ontology ID Number Length
 my $CO_ID_LENGTH = 7;
@@ -123,7 +127,7 @@ my @OBO_TERM_TAGS = ("id","is_anonymous","name","namespace","alt_id","def","comm
 
 # Get command line flags/options
 my %opts=();
-getopts("i:o:t:u:fv", \%opts);
+getopts("c:i:o:t:u:fv", \%opts);
 
 my $verbose = $opts{v};
 my $obo_output = $opts{o};
@@ -131,6 +135,7 @@ my $obo_user = $opts{u};
 my $td_output = $opts{t};
 my $filter_institution = $opts{i};
 my $ignore_checks = $opts{f};
+my $td_scale_category_count = $opts{c} ? $opts{c} : $DEFAULT_TD_SCALE_CATEGORY_COUNT;
 
 
 # Get trait workbook file location
@@ -340,8 +345,8 @@ sub parseSheet {
             if ( index($key, "Category") != -1 ) {
                 my $i = $key;
                 $i =~ s/Category[ ]*//;
-                if ( $i > $TD_SCALE_CATEGORY_COUNT ) {
-                    $TD_SCALE_CATEGORY_COUNT = $i;
+                if ( $i > $td_scale_category_count ) {
+                    $td_scale_category_count = $i;
                 }
             }
         }
@@ -464,7 +469,7 @@ sub buildTraitDictionary {
 
         # Set scale headers
         my @scale_headers = @TD_SCALE_HEADERS;
-        for my $i (1 .. $TD_SCALE_CATEGORY_COUNT) {
+        for my $i (1 .. $td_scale_category_count) {
             push(@scale_headers, "Category $i");
         }
 
@@ -547,7 +552,7 @@ sub writeTraitDictionary {
     push(@headers, @TD_TRAIT_HEADERS);
     push(@headers, @TD_METHOD_HEADERS);
     push(@headers, @TD_SCALE_HEADERS);
-    for my $i (1 .. $TD_SCALE_CATEGORY_COUNT) {
+    for my $i (1 .. $td_scale_category_count) {
         push(@headers, "Category $i");
     }
 
@@ -889,8 +894,28 @@ sub OBOAddVariables {
 
         my $variable_xref = defined($variable->{'Variable Xref'}) ? $variable->{'Variable Xref'} : "";
         my $variable_def = "";
-        if ( defined($method->{'Method description'}) && defined($variable->{'Scale name'}) ) {
-            $variable_def = $method->{'Method description'} . " (" . $variable->{'Scale name'} . ")";
+        if ( defined($trait->{'Trait description'}) ) {
+            $variable_def .= "TRAIT: " . $trait->{'Trait description'};
+        }
+        if ( defined($method->{'Method description'}) ) {
+            $variable_def .= " METHOD: " . $method->{'Method description'};
+        }
+        if ( defined($scale->{'Scale name'}) ) {
+            $variable_def .= " SCALE: " . $scale->{'Scale name'};
+
+            # Check for scale category definitions
+            my @scale_cat_defs = ();
+            foreach my $i (1 .. $td_scale_category_count) {
+                my $scale_cat_header = "Category $i";
+                my $scale_cat_value = $scale->{$scale_cat_header};
+                if ( defined($scale_cat_value) ) {
+                    push(@scale_cat_defs, $scale_cat_value);
+                }
+            }
+            if ( @scale_cat_defs ) {
+                $variable_def .= " (" . join(', ', @scale_cat_defs) . ")";
+            }
+
         }
 
         my %items = (
@@ -1104,7 +1129,7 @@ sub OBOAddScales {
         my $scale_cat_count = 0;
         my @scale_cat_items = ();
         my @scale_cat_defs = ();
-        foreach my $i (1 .. $TD_SCALE_CATEGORY_COUNT) {
+        foreach my $i (1 .. $td_scale_category_count) {
             my $scale_cat_header = "Category $i";
             my $scale_cat_value = $scale->{$scale_cat_header};
             if ( defined($scale_cat_value) ) {
